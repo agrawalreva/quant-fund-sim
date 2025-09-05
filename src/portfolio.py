@@ -73,3 +73,76 @@ class Portfolio:
         self.current_date = None
         
         logger.info(f"Initialized portfolio {portfolio_id} with ${initial_cash:,.2f}")
+    
+    def update_prices(self, prices: Dict[str, float], date: datetime):
+        """
+        Update current prices for all positions.
+        
+        Args:
+            prices: Dictionary of symbol -> current price
+            date: Current date
+        """
+        self.current_date = date
+        
+        for symbol, position in self.positions.items():
+            if symbol in prices:
+                position.current_price = prices[symbol]
+    
+    def get_position(self, symbol: str) -> Optional[Position]:
+        """Get position for a symbol."""
+        return self.positions.get(symbol)
+    
+    def add_position(self, symbol: str, quantity: float, price: float, date: datetime):
+        """
+        Add or update a position.
+        
+        Args:
+            symbol: Stock symbol
+            quantity: Number of shares (positive for long, negative for short)
+            price: Execution price
+            date: Trade date
+        """
+        trade_value = quantity * price
+        
+        # Check if we have enough cash for long positions
+        if quantity > 0 and trade_value > self.cash_balance:
+            logger.warning(f"Insufficient cash for {symbol} trade. Required: ${trade_value:,.2f}, Available: ${self.cash_balance:,.2f}")
+            return False
+        
+        # Update or create position
+        if symbol in self.positions:
+            existing_pos = self.positions[symbol]
+            total_quantity = existing_pos.quantity + quantity
+            total_cost = (existing_pos.quantity * existing_pos.avg_price) + trade_value
+            
+            if total_quantity != 0:
+                new_avg_price = total_cost / total_quantity
+                existing_pos.quantity = total_quantity
+                existing_pos.avg_price = new_avg_price
+            else:
+                # Position closed
+                del self.positions[symbol]
+        else:
+            # New position
+            self.positions[symbol] = Position(
+                symbol=symbol,
+                quantity=quantity,
+                avg_price=price,
+                current_price=price
+            )
+        
+        # Update cash balance
+        self.cash_balance -= trade_value
+        
+        # Record trade
+        self.trade_history.append({
+            'date': date,
+            'symbol': symbol,
+            'quantity': quantity,
+            'price': price,
+            'value': trade_value,
+            'cash_after': self.cash_balance
+        })
+        
+        logger.info(f"Trade: {quantity:+.0f} {symbol} @ ${price:.2f} (${trade_value:+,.2f})")
+        return True
