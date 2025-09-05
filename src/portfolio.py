@@ -40,3 +40,36 @@ class Position:
     def weight(self) -> float:
         """Calculate position weight (requires total portfolio value)."""
         return 0.0  # Will be calculated by portfolio
+
+
+class Portfolio:
+    """
+    Core portfolio class for managing positions and tracking performance.
+    
+    Handles position management, cash balance, and basic performance metrics.
+    """
+    
+    def __init__(self, 
+                 initial_cash: float = 100000.0,
+                 portfolio_id: str = "default",
+                 rebalance_frequency: str = "monthly"):
+        """
+        Initialize portfolio.
+        
+        Args:
+            initial_cash: Starting cash amount
+            portfolio_id: Unique identifier for portfolio
+            rebalance_frequency: How often to rebalance (daily, weekly, monthly)
+        """
+        self.portfolio_id = portfolio_id
+        self.initial_cash = initial_cash
+        self.cash_balance = initial_cash
+        self.positions: Dict[str, Position] = {}
+        self.rebalance_frequency = rebalance_frequency
+        
+        # Performance tracking
+        self.performance_history = []
+        self.trade_history = []
+        self.current_date = None
+        
+        logger.info(f"Initialized portfolio {portfolio_id} with ${initial_cash:,.2f}")
