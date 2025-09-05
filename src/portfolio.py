@@ -146,3 +146,60 @@ class Portfolio:
         
         logger.info(f"Trade: {quantity:+.0f} {symbol} @ ${price:.2f} (${trade_value:+,.2f})")
         return True
+    
+    def get_total_value(self) -> float:
+        """Calculate total portfolio value."""
+        positions_value = sum(pos.market_value for pos in self.positions.values())
+        return self.cash_balance + positions_value
+    
+    def get_position_weights(self) -> Dict[str, float]:
+        """Calculate current position weights."""
+        total_value = self.get_total_value()
+        if total_value <= 0:
+            return {}
+        
+        weights = {}
+        for symbol, position in self.positions.items():
+            weights[symbol] = position.market_value / total_value
+        
+        return weights
+    
+    def rebalance_to_targets(self, target_weights: Dict[str, float], prices: Dict[str, float], date: datetime):
+        """
+        Rebalance portfolio to target weights.
+        
+        Args:
+            target_weights: Dictionary of symbol -> target weight
+            prices: Current prices
+            date: Rebalance date
+        """
+        logger.info(f"Rebalancing portfolio on {date.strftime('%Y-%m-%d')}")
+        
+        # Update current prices
+        self.update_prices(prices, date)
+        
+        # Calculate current portfolio value
+        total_value = self.get_total_value()
+        
+        if total_value <= 0:
+            logger.error("Portfolio value is zero or negative, cannot rebalance")
+            return
+        
+        # Calculate target values and required trades
+        trades = {}
+        for symbol, target_weight in target_weights.items():
+            if symbol not in prices:
+                logger.warning(f"No price data for {symbol}, skipping")
+                continue
+                
+            target_value = total_value * target_weight
+            current_value = self.positions.get(symbol, Position(symbol, 0, 0)).market_value
+            trade_value = target_value - current_value
+            
+            if abs(trade_value) > 1.0:  # Minimum trade size
+                trade_quantity = trade_value / prices[symbol]
+                trades[symbol] = trade_quantity
+        
+        # Execute trades
+        for symbol, quantity in trades.items():
+            self.add_position(symbol, quantity, prices[symbol], date)
