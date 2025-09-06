@@ -203,3 +203,19 @@ class Portfolio:
         # Execute trades
         for symbol, quantity in trades.items():
             self.add_position(symbol, quantity, prices[symbol], date)
+    
+    def record_performance(self, date: datetime):
+        """Record current portfolio state for performance tracking."""
+        performance_record = {
+            'date': date,
+            'total_value': self.get_total_value(),
+            'cash_balance': self.cash_balance,
+            'positions': {symbol: {
+                'quantity': pos.quantity,
+                'avg_price': pos.avg_price,
+                'current_price': pos.current_price,
+                'market_value': pos.market_value
+            } for symbol, pos in self.positions.items()}
+        }
+        
+        self.performance_history.append(performance_record)
