@@ -283,3 +283,18 @@ class Portfolio:
                 })
         
         return metrics
+    
+    def get_summary(self) -> Dict:
+        """Get portfolio summary."""
+        total_value = self.get_total_value()
+        weights = self.get_position_weights()
+        
+        return {
+            'portfolio_id': self.portfolio_id,
+            'total_value': total_value,
+            'cash_balance': self.cash_balance,
+            'positions_count': len(self.positions),
+            'position_weights': weights,
+            'total_trades': len(self.trade_history),
+            'current_date': self.current_date
+        }
