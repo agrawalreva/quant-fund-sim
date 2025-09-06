@@ -261,4 +261,25 @@ class Portfolio:
             'total_trades': len(self.trade_history)
         }
         
+        # Benchmark comparison
+        if benchmark_returns is not None:
+            # Align dates
+            aligned_benchmark = benchmark_returns.reindex(perf_df.index).dropna()
+            aligned_portfolio = perf_df['portfolio_return'].reindex(aligned_benchmark.index).dropna()
+            
+            if len(aligned_portfolio) > 1 and len(aligned_benchmark) > 1:
+                # Beta calculation
+                covariance = np.cov(aligned_portfolio, aligned_benchmark)[0, 1]
+                benchmark_variance = np.var(aligned_benchmark)
+                beta = covariance / benchmark_variance if benchmark_variance > 0 else 0
+                
+                # Alpha calculation
+                risk_free_rate = 0.02  # Assume 2% risk-free rate
+                alpha = annualized_return - (risk_free_rate + beta * (aligned_benchmark.mean() * 252 - risk_free_rate))
+                
+                metrics.update({
+                    'beta': beta,
+                    'alpha': alpha
+                })
+        
         return metrics
