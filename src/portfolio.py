@@ -219,3 +219,46 @@ class Portfolio:
         }
         
         self.performance_history.append(performance_record)
+    
+    def get_performance_metrics(self, benchmark_returns: Optional[pd.Series] = None) -> Dict[str, float]:
+        """
+        Calculate basic performance metrics.
+        
+        Args:
+            benchmark_returns: Benchmark returns for comparison
+            
+        Returns:
+            Dictionary of performance metrics
+        """
+        if len(self.performance_history) < 2:
+            return {}
+        
+        # Convert to DataFrame for easier calculation
+        perf_df = pd.DataFrame(self.performance_history)
+        perf_df['date'] = pd.to_datetime(perf_df['date'])
+        perf_df = perf_df.set_index('date').sort_index()
+        
+        # Calculate returns
+        perf_df['portfolio_return'] = perf_df['total_value'].pct_change()
+        
+        # Basic metrics
+        total_return = (perf_df['total_value'].iloc[-1] / perf_df['total_value'].iloc[0]) - 1
+        annualized_return = (1 + total_return) ** (252 / len(perf_df)) - 1
+        volatility = perf_df['portfolio_return'].std() * np.sqrt(252)
+        sharpe_ratio = annualized_return / volatility if volatility > 0 else 0
+        
+        # Drawdown calculation
+        running_max = perf_df['total_value'].expanding().max()
+        drawdown = (perf_df['total_value'] - running_max) / running_max
+        max_drawdown = drawdown.min()
+        
+        metrics = {
+            'total_return': total_return,
+            'annualized_return': annualized_return,
+            'volatility': volatility,
+            'sharpe_ratio': sharpe_ratio,
+            'max_drawdown': max_drawdown,
+            'total_trades': len(self.trade_history)
+        }
+        
+        return metrics
