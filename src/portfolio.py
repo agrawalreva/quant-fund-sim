@@ -315,3 +315,27 @@ class Portfolio:
             'performance_history': self.performance_history,
             'trade_history': self.trade_history
         }
+    
+    @classmethod
+    def from_dict(cls, data: Dict) -> 'Portfolio':
+        """Create portfolio from dictionary."""
+        portfolio = cls(
+            initial_cash=data['initial_cash'],
+            portfolio_id=data['portfolio_id'],
+            rebalance_frequency=data['rebalance_frequency']
+        )
+        
+        portfolio.cash_balance = data['cash_balance']
+        portfolio.performance_history = data['performance_history']
+        portfolio.trade_history = data['trade_history']
+        
+        # Reconstruct positions
+        for symbol, pos_data in data['positions'].items():
+            portfolio.positions[symbol] = Position(
+                symbol=pos_data['symbol'],
+                quantity=pos_data['quantity'],
+                avg_price=pos_data['avg_price'],
+                current_price=pos_data['current_price']
+            )
+        
+        return portfolio
