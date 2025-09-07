@@ -298,3 +298,20 @@ class Portfolio:
             'total_trades': len(self.trade_history),
             'current_date': self.current_date
         }
+    
+    def to_dict(self) -> Dict:
+        """Convert portfolio to dictionary for serialization."""
+        return {
+            'portfolio_id': self.portfolio_id,
+            'initial_cash': self.initial_cash,
+            'cash_balance': self.cash_balance,
+            'positions': {symbol: {
+                'symbol': pos.symbol,
+                'quantity': pos.quantity,
+                'avg_price': pos.avg_price,
+                'current_price': pos.current_price
+            } for symbol, pos in self.positions.items()},
+            'rebalance_frequency': self.rebalance_frequency,
+            'performance_history': self.performance_history,
+            'trade_history': self.trade_history
+        }
