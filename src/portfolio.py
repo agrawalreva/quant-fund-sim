@@ -339,3 +339,43 @@ class Portfolio:
             )
         
         return portfolio
+
+
+def main():
+    """Example usage of Portfolio class."""
+    
+    # Create portfolio
+    portfolio = Portfolio(initial_cash=100000, portfolio_id="test_portfolio")
+    
+    # Simulate some trades
+    prices = {'AAPL': 150.0, 'MSFT': 300.0, 'GOOGL': 2500.0}
+    date = datetime(2023, 1, 1)
+    
+    # Add positions
+    portfolio.add_position('AAPL', 100, 150.0, date)
+    portfolio.add_position('MSFT', 50, 300.0, date)
+    
+    # Update prices
+    new_prices = {'AAPL': 160.0, 'MSFT': 310.0, 'GOOGL': 2600.0}
+    portfolio.update_prices(new_prices, date)
+    
+    # Record performance
+    portfolio.record_performance(date)
+    
+    # Print summary
+    summary = portfolio.get_summary()
+    print("Portfolio Summary:")
+    for key, value in summary.items():
+        print(f"  {key}: {value}")
+    
+    # Test rebalancing
+    target_weights = {'AAPL': 0.4, 'MSFT': 0.4, 'GOOGL': 0.2}
+    portfolio.rebalance_to_targets(target_weights, new_prices, date)
+    
+    print(f"\nAfter rebalancing:")
+    print(f"Total value: ${portfolio.get_total_value():,.2f}")
+    print(f"Position weights: {portfolio.get_position_weights()}")
+
+
+if __name__ == "__main__":
+    main()
