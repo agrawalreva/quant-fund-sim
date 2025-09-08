@@ -68,3 +68,87 @@ class BaseStrategy(ABC):
             'date': date,
             'portfolio_value': portfolio_value
         })
+
+
+class MomentumStrategy(BaseStrategy):
+    """
+    Momentum strategy based on price and return momentum.
+    
+    Buys assets with strong positive momentum, sells assets with negative momentum.
+    """
+    
+    def __init__(self, 
+                 name: str = "momentum",
+                 lookback_period: int = 20,
+                 momentum_threshold: float = 0.02,
+                 rebalance_frequency: int = 5):
+        """
+        Initialize momentum strategy.
+        
+        Args:
+            name: Strategy name
+            lookback_period: Period for momentum calculation
+            momentum_threshold: Minimum momentum to trigger signal
+            rebalance_frequency: Days between rebalancing
+        """
+        super().__init__(name, lookback_period)
+        self.momentum_threshold = momentum_threshold
+        self.rebalance_frequency = rebalance_frequency
+    
+    def generate_signals(self, data: pd.DataFrame, date: datetime) -> Dict[str, float]:
+        """
+        Generate momentum signals.
+        
+        Signal calculation:
+        1. Calculate price momentum over lookback period
+        2. Calculate return momentum (recent vs historical returns)
+        3. Combine signals with threshold filtering
+        """
+        signals = {}
+        
+        # Get available symbols from data columns
+        symbols = [col.split('_')[0] for col in data.columns if 'Close' in col]
+        
+        for symbol in symbols:
+            close_col = f"{symbol}_Close"
+            if close_col not in data.columns:
+                continue
+            
+            # Get price data up to current date
+            price_data = data[close_col].loc[:date].dropna()
+            
+            if len(price_data) < self.lookback_period:
+                signals[symbol] = 0.0
+                continue
+            
+            # Calculate price momentum
+            current_price = price_data.iloc[-1]
+            past_price = price_data.iloc[-self.lookback_period]
+            price_momentum = (current_price - past_price) / past_price
+            
+            # Calculate return momentum (recent vs historical volatility)
+            returns = price_data.pct_change().dropna()
+            if len(returns) < self.lookback_period:
+                signals[symbol] = 0.0
+                continue
+            
+            recent_returns = returns.tail(5).mean()
+            historical_vol = returns.std()
+            
+            # Normalize return momentum
+            return_momentum = recent_returns / historical_vol if historical_vol > 0 else 0
+            
+            # Combine signals
+            combined_signal = (price_momentum + return_momentum) / 2
+            
+            # Apply threshold
+            if abs(combined_signal) < self.momentum_threshold:
+                signals[symbol] = 0.0
+            else:
+                # Normalize to [-1, 1] range
+                signals[symbol] = np.clip(combined_signal / self.momentum_threshold, -1, 1)
+        
+        # Store signals
+        self.signals[date] = signals
+        
+        return signals
