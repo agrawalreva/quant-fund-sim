@@ -285,3 +285,24 @@ class BacktestEngine:
         
         # Get trading dates
         trading_dates = self._get_trading_dates(data, start_date, end_date)
+        
+        # Run simulation
+        for i, date in enumerate(trading_dates):
+            # Update portfolio prices
+            current_prices = self._get_current_prices(data, date)
+            self.portfolio.update_prices(current_prices, date)
+            
+            # Record performance
+            self.portfolio.record_performance(date)
+            strategy.record_performance(date, self.portfolio.get_total_value())
+            
+            # Rebalance if needed
+            if i % rebalance_frequency == 0:
+                self._rebalance_portfolio(strategy, data, date, current_prices)
+        
+        # Calculate final results
+        results = self._calculate_results(strategy, start_date, end_date)
+        
+        logger.info(f"Backtest completed. Final value: ${self.portfolio.get_total_value():,.2f}")
+        
+        return results
