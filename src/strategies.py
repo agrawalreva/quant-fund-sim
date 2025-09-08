@@ -152,3 +152,75 @@ class MomentumStrategy(BaseStrategy):
         self.signals[date] = signals
         
         return signals
+
+
+class MeanReversionStrategy(BaseStrategy):
+    """
+    Mean reversion strategy based on price deviation from moving averages.
+    
+    Buys assets trading below their mean, sells assets trading above their mean.
+    """
+    
+    def __init__(self, 
+                 name: str = "mean_reversion",
+                 lookback_period: int = 20,
+                 deviation_threshold: float = 0.1,
+                 rebalance_frequency: int = 5):
+        """
+        Initialize mean reversion strategy.
+        
+        Args:
+            name: Strategy name
+            lookback_period: Period for moving average calculation
+            deviation_threshold: Minimum deviation to trigger signal
+            rebalance_frequency: Days between rebalancing
+        """
+        super().__init__(name, lookback_period)
+        self.deviation_threshold = deviation_threshold
+        self.rebalance_frequency = rebalance_frequency
+    
+    def generate_signals(self, data: pd.DataFrame, date: datetime) -> Dict[str, float]:
+        """
+        Generate mean reversion signals.
+        
+        Signal calculation:
+        1. Calculate moving average over lookback period
+        2. Calculate deviation from moving average
+        3. Generate contrarian signals (buy low, sell high)
+        """
+        signals = {}
+        
+        # Get available symbols from data columns
+        symbols = [col.split('_')[0] for col in data.columns if 'Close' in col]
+        
+        for symbol in symbols:
+            close_col = f"{symbol}_Close"
+            if close_col not in data.columns:
+                continue
+            
+            # Get price data up to current date
+            price_data = data[close_col].loc[:date].dropna()
+            
+            if len(price_data) < self.lookback_period:
+                signals[symbol] = 0.0
+                continue
+            
+            # Calculate moving average
+            current_price = price_data.iloc[-1]
+            moving_avg = price_data.tail(self.lookback_period).mean()
+            
+            # Calculate deviation from mean
+            deviation = (current_price - moving_avg) / moving_avg
+            
+            # Generate contrarian signal
+            if abs(deviation) < self.deviation_threshold:
+                signals[symbol] = 0.0
+            else:
+                # Negative signal for positive deviation (sell high)
+                # Positive signal for negative deviation (buy low)
+                signals[symbol] = -np.clip(deviation / self.deviation_threshold, -1, 1)
+        
+        # Store signals
+        self.signals[date] = signals
+        
+        return signals
