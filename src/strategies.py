@@ -224,3 +224,29 @@ class MeanReversionStrategy(BaseStrategy):
         self.signals[date] = signals
         
         return signals
+
+
+class BacktestEngine:
+    """
+    Backtesting engine for strategy evaluation.
+    
+    Handles portfolio simulation, signal execution, and performance tracking.
+    """
+    
+    def __init__(self, 
+                 initial_cash: float = 100000.0,
+                 transaction_cost: float = 0.001,
+                 slippage: float = 0.0005):
+        """
+        Initialize backtesting engine.
+        
+        Args:
+            initial_cash: Starting cash amount
+            transaction_cost: Transaction cost as fraction of trade value
+            slippage: Market impact as fraction of trade value
+        """
+        self.initial_cash = initial_cash
+        self.transaction_cost = transaction_cost
+        self.slippage = slippage
+        self.portfolio = None
+        self.benchmark_data = None
