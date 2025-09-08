@@ -250,3 +250,38 @@ class BacktestEngine:
         self.slippage = slippage
         self.portfolio = None
         self.benchmark_data = None
+        
+    def run_backtest(self, 
+                    strategy: BaseStrategy,
+                    data: pd.DataFrame,
+                    start_date: datetime,
+                    end_date: datetime,
+                    rebalance_frequency: int = 5,
+                    benchmark_symbol: str = '^GSPC') -> Dict:
+        """
+        Run backtest for given strategy.
+        
+        Args:
+            strategy: Trading strategy to test
+            data: Historical price data
+            start_date: Backtest start date
+            end_date: Backtest end date
+            rebalance_frequency: Days between rebalancing
+            benchmark_symbol: Benchmark symbol for comparison
+            
+        Returns:
+            Dictionary with backtest results
+        """
+        logger.info(f"Starting backtest for {strategy.name} from {start_date} to {end_date}")
+        
+        # Initialize portfolio
+        self.portfolio = Portfolio(
+            initial_cash=self.initial_cash,
+            portfolio_id=f"{strategy.name}_backtest"
+        )
+        
+        # Get benchmark data
+        self.benchmark_data = self._get_benchmark_data(benchmark_symbol, start_date, end_date)
+        
+        # Get trading dates
+        trading_dates = self._get_trading_dates(data, start_date, end_date)
