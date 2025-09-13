@@ -306,3 +306,16 @@ class BacktestEngine:
         logger.info(f"Backtest completed. Final value: ${self.portfolio.get_total_value():,.2f}")
         
         return results
+    
+    def _get_benchmark_data(self, benchmark_symbol: str, start_date: datetime, end_date: datetime) -> pd.Series:
+        """Get benchmark data for comparison."""
+        try:
+            import yfinance as yf
+            ticker = yf.Ticker(benchmark_symbol)
+            hist = ticker.history(start=start_date, end=end_date)
+            if not hist.empty:
+                return hist['Close'].pct_change().dropna()
+        except Exception as e:
+            logger.warning(f"Could not fetch benchmark data: {e}")
+        
+        return pd.Series()
